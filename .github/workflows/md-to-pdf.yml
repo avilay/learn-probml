@@ -25,7 +25,8 @@ jobs:
             texlive-xetex \
             texlive-latex-recommended \
             texlive-fonts-recommended \
-            texlive-latex-extra
+            texlive-latex-extra \
+            lmodern
 
       - name: Convert Markdown files to PDF
         run: |
