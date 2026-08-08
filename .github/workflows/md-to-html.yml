@@ -1,0 +1,60 @@
+name: Publish Markdown to avilay.github.io
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'md/**.md'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout learn-probml
+        uses: actions/checkout@v4
+
+      - name: Install Pandoc
+        run: |
+          curl -sLO https://github.com/jgm/pandoc/releases/download/3.10.1/pandoc-3.10.1-1-amd64.deb
+          sudo dpkg -i pandoc-3.10.1-1-amd64.deb
+          rm pandoc-3.10.1-1-amd64.deb
+
+      - name: Convert Markdown files to HTML
+        run: |
+          mkdir -p html-out
+          for file in md/*.md; do
+            name=$(basename "$file" .md)
+            pandoc "$file" \
+              -s \
+              --mathjax \
+              --include-in-header=.github/notes-header.html \
+              --metadata title="$name" \
+              -o "html-out/${name}.html"
+          done
+
+      - name: Checkout avilay.github.io
+        uses: actions/checkout@v4
+        with:
+          repository: avilay/avilay.github.io
+          token: ${{ secrets.PAGES_DEPLOY_TOKEN }}
+          path: pages-repo
+
+      - name: Publish HTML to notes/probml
+        run: |
+          mkdir -p pages-repo/notes/probml
+          cp html-out/*.html pages-repo/notes/probml/
+          cd pages-repo
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add notes/probml
+          if git diff --cached --quiet; then
+            echo "No changes to publish"
+          else
+            git commit -m "Publish updated notes from learn-probml"
+            git push
+          fi
