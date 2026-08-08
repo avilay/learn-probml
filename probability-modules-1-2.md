@@ -59,10 +59,12 @@ Probability can now be defined as a function that assigns a real number to each 
 For the die-roll example, if we assign the probability as follows:
 
 $$
+\displaylines {
 P(E) = \frac{1}{2} \\
 P(O) = \frac{1}{2} \\
 P(\Omega) = 1 \\
 P(\emptyset) = 0
+}
 $$
 
 It can be seen that it follows all three rules of the probability measure, and is therefor a valid assignment.
@@ -92,9 +94,11 @@ Think of a person's height, or how long a request really took. In reality these 
 The moment you measure, you use an instrument, and every instrument has a smallest step. A stopwatch might only show hundredths of a second. A ruler only shows millimeters. So even though the true height is smooth, your recorded number always lands on one of a finite list of values — 170 mm, 171 mm, 172 mm, never 170.4839 mm. So strictly speaking, measured data is always a bit chunky, never perfectly smooth. We usually pretend it's continuous anyway, because the chunks are so tiny they don't matter. But this can be quantified, i.e., there is a mathematical way to answer whether or not the chunkiness is negligible.
 
 Lets say the tiniest value my measurement apparatus can measure is $h$, then according to Sheppard's correction, my varainace will be affected as:
+
 $$
 \sigma_{obs}^2 \approx \sigma_{act}^2 + \frac{h^2}{12}
 $$
+
 My observed variance will be an overestimate over my actual variance. To figure out whether the chunkiness is negligible, I can compare $h$ with either $\sigma$. Lets say I am measuring heights of some population. The smallest length my scale can measure is $1$ mm, then $h = 1$. And the standard deviation of heights is $\sigma = 2.8" \approx 70mm$ (per National Health Survey), i.e., $\sigma^2 = 70\;mm * 70\;mm = 4900\;mm^2$, and $\frac{h^2}{12} = \frac{1}{12} = 0.0833 \;mm^2$. If we compare the two $\frac{0.0833}{4900} \approx 0.000017 = 0.0017\%$, unarguably tiny!
 
 On the other hand, typical latency dashboards like Grafana lump all requests into a few wide buckets of around 250 ms. It is almost as wide as the values that I care about. Here pretending that things are smooth and reading off a "precise" number off that bucket is clearly misleading.
@@ -156,11 +160,15 @@ For probabilities, the main purpose of the random variable is to group outcomes 
 #### QPS
 
 Lets define a random variable $X$ that measures the number of requests in a 1-second window. If my sample space is the set of integers between $0$ and $N$, then $X$ is simply an identity function. Now, lets say I define two other random variables - $Y$ and $Z$, where $Y$ is the number of distinct client IPs, and $Z$ is the number of bytes served by the server. I'll now need the table-based sample space and the random variables can be defined as:
+
 $$
+\begin{equation}
 X(\omega) = nrows(\omega) \\
 Y(\omega) = distinct(\omega::ClientIP) \\
 Z(\omega) = sum(\omega::Bytes)
+\end{equation}
 $$
+
 Now if I want to measure the "burstiness" of the arrival times, I can amend my sample space to contain the arrival timestamp.
 
 Random variables on the same sample space can have joint distributions, e.g., I can model the total number of requests against the number of sessions (a session being all the requests from a single IP). Since distinct IPs can't exceed the number of rows, $Y \le X$ always, and $Y = 0$ exactly when $X = 0$, so the joint distribution lives on $\{(x,y): 0 \le y \le x\}$, not on the strict product set.
