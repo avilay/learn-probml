@@ -1,0 +1,51 @@
+name: Convert Markdown to PDF
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'md/**.md'
+
+permissions:
+  contents: write
+
+jobs:
+  build-pdfs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Pandoc and LaTeX
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            pandoc \
+            texlive-xetex \
+            texlive-latex-recommended \
+            texlive-fonts-recommended \
+            texlive-latex-extra
+
+      - name: Convert Markdown files to PDF
+        run: |
+          mkdir -p pdfs
+          for file in md/*.md; do
+            name=$(basename "$file" .md)
+            pandoc "$file" \
+              -o "pdfs/${name}.pdf" \
+              --pdf-engine=xelatex \
+              -V geometry:margin=1in
+          done
+
+      - name: Commit and push generated PDFs
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add pdfs/
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Auto-generate PDFs from markdown"
+            git push
+          fi
