@@ -45,7 +45,7 @@ Probabilities are defined for events, **not** outcomes. An event is a collection
 
 For the die-roll experiment, the most straightforward event space that I can construct is the full powerset of $\{1, 2, 3, 4, 5, 6\}$ with all 64 elements. It will meet all the three rules. But I can also definte an event space as follows:
 
-* $E$ an even number appears face-up, i.e., $E = \{2, 4, 6\}$
+* $E$ an even number appears face-up, i.e., $E = \\{2, 4, 6\\}$
 * $O$ an odd number appears face-up, i.e., $O = \{1, 3, 5\}$
 
 I can define $\mathscr F = \{E, O, \Omega, \emptyset\}$. $O$ and $E$ are complements of each other, so are $\Omega$ and $\emptyset$. The union of $E$ and $O$ is the full sample space which is also part of this event space. It can be seen that all three conditions are met.
