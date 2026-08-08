@@ -162,11 +162,11 @@ For probabilities, the main purpose of the random variable is to group outcomes 
 Lets define a random variable $X$ that measures the number of requests in a 1-second window. If my sample space is the set of integers between $0$ and $N$, then $X$ is simply an identity function. Now, lets say I define two other random variables - $Y$ and $Z$, where $Y$ is the number of distinct client IPs, and $Z$ is the number of bytes served by the server. I'll now need the table-based sample space and the random variables can be defined as:
 
 $$
-\begin{equation}
+\displaylines {
 X(\omega) = nrows(\omega) \\
 Y(\omega) = distinct(\omega::ClientIP) \\
 Z(\omega) = sum(\omega::Bytes)
-\end{equation}
+}
 $$
 
 Now if I want to measure the "burstiness" of the arrival times, I can amend my sample space to contain the arrival timestamp.
@@ -212,9 +212,11 @@ A thermometer reading of a room is all three at once — which room, the actual 
 ## Distribution of a Random Variable
 
 Once $X: \Omega \to \mathbb R$ is fixed, it carries the probability measure $P$ — which lives on the events of $\Omega$ — over to the real line. The probability that $X$ lands in some set $B \subseteq \mathbb R$ is just the probability of the outcomes that $X$ sends into $B$:
+
 $$
 P_X(B) = P(\{\omega: X(\omega) \in B\}) = P(X^{-1}(B))
 $$
+
 This new measure $P_X = P \circ X^{-1}$, living on $\mathbb R$, is called the **distribution** (or **law**) of $X$ — the *pushforward* of $P$ through $X$. Every "$P(X = x)$ is shorthand for $P(\{\omega: X(\omega) = x\})$" expansion we keep writing is just this definition applied to a single point.
 
 The payoff of naming it: the PMF, the PDF, and the CDF below are not three unrelated objects. They are three ways of describing the one measure $P_X$ — a table of point masses, a density, and a running total. Which descriptions are available depends on what $P_X$ looks like: point masses for a discrete law, a density for a continuous one, and — for a mixed law like recorded latency — a bit of each. That last case is exactly why the CDF, which always exists, turns out to be the description worth reaching for first.
@@ -258,9 +260,11 @@ One caution that the physical-density analogy actually makes clearer: a density 
 ## Cumulative Distribution Function
 
 The PMF describes only discrete laws and the PDF only continuous ones, and the latency example already broke both by being mixed. There is one description of $P_X$ that works for all three: the **cumulative distribution function**,
+
 $$
 F(x) = P(X \le x) = P_X\big((-\infty, x]\big)
 $$
+
 It is defined for *every* random variable — discrete, continuous, or mixed — because "accumulate all the probability at or below $x$" is always a sensible question. Three properties pin it down: $F$ is non-decreasing; $F(-\infty) = 0$ and $F(+\infty) = 1$; and $F$ is right-continuous.
 
 The shape of $F$ reads off the kind of law directly:
@@ -282,22 +286,28 @@ This is why, for anything with atoms, the CDF is the object to reach for first: 
 ## Expectation and Variance
 
 $$
+\displaylines {
 E[X] = \sum_x x \; p(x) \\
 E[X] = \int x \; f(x)dx
+}
 $$
 
 For the discrete case the summation is over the support of $X$, and for the continuous case, the integration is over the range where the probability exists. For the mixed case it would look something like -
+
 $$
 E[T] = \int_l^c t\;f(t)dt + c \cdot P(T=c)
 $$
+
 Notice that this is exactly $E[\min(T, c)]$ — the expectation of the **recorded** (censored) variable, not of the true latency. Every timed-out request contributes $c$ rather than its true, larger value, so this mean is biased low — the same downward drag the light-bulb study warned about. Recovering $E[T]$ for the true latency needs a model that credits the fact that $T > c$ on those requests; the censored sample does not hand it to you directly.
 
 Variance is the squared distance from the mean:
+
 $$
 \begin{align}
 Var[X] &= E[(X - E[X])^2] \\
 &= E[X^2] - (E[X])^2
 \end{align}
 $$
+
 And it is computed with either a summation or an integration depending on $X$.
 
