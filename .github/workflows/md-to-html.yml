@@ -33,7 +33,7 @@ jobs:
               -s \
               --mathjax \
               --include-in-header=.github/notes-header.html \
-              --metadata title="$name" \
+              --metadata pagetitle="$name" \
               -o "html-out/${name}.html"
           done
 
