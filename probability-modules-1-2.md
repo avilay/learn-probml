@@ -301,6 +301,3 @@ Var[X] &= E[(X - E[X])^2] \\
 $$
 And it is computed with either a summation or an integration depending on $X$.
 
----
-
-*Moved to Module 3 (conditional probability): the total-probability theorem and Bayes' theorem. They both rely on the conditional probability $P(A \mid B) = P(A \cap B) / P(B)$, which should be defined and motivated first — so they belong in the Module 3 notes rather than here.*

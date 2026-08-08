@@ -91,7 +91,8 @@ This is called the **marginal** distribution, and the name is literal: if you wr
 
 And if I fix one variable and ask about the other, I am back to conditional probability — applied to distributions:
 $$
-p_{Y \mid X}(y \mid x) = \frac{p(x, y)}{p_X(x)}.
+p_{Y \mid X}(y \mid x) = \frac{p(x, y)}{p_X(x)} \\
+p(x, y) = p_{Y \mid X}(y \mid x)\;p_X(x) = p_{X \mid Y}(x \mid y)\;p_Y(y)
 $$
 If I want to find out the conditional probability distribution of $Y$ when $X = 2$, I just slice that row out and rescale it.
 
@@ -103,19 +104,53 @@ Similarly if I were conditioning on $Y$, I'd just slice that column out and resc
 
 ![m3-joint-marginal-conditional](./imgs/m3-joint-marginal-conditional.png)
 
+> A joint distribution of two variables only makes sense if both the variables share the same sample space as their domain.
+
 ## Independence
 
-Two random variables are **independent** when knowing one tells you nothing about the other. If I know that $Y = y$ happened, that does not change the probability of $X = x$ happening (or vice-versa).  $P(X = x \mid Y = y) = P(X = x)$, then $X$ and $Y$ are independent of each other. Of course this means that $P(Y = y \mid X = x) = P(Y = y)$ as well. Mathematically and using p.m.fs:
+Two random variables are **independent** when knowing one tells you nothing about the other. If I flip two coins and get a heads on the first one, it does not tell me anything about the second one. 
+
+> I tried to come up with a clean real world example of independence but the only ones I could come up with were still pretty contrived. Here is one. Going back to our Latency example, lets say we define two new random variables on that sample space - $S$ the class of HTTP status of the response, and $R$, the first two bits of the trace ID that our OpenTelemetry SDK generates for each request. The trace ID is supposed to be completely random. So knowing its first two bits should not be able to tell us anything about the response status. 
+
+Intuitively, if I know that $Y = y$ happened, that does not change the probability of $X = x$ happening (or vice-versa).  $P(X = x \mid Y = y) = P(X = x)$, then $X$ and $Y$ are independent of each other. Of course this means that $P(Y = y \mid X = x) = P(Y = y)$ as well. Writing this out with p.m.fs:
 $$
-X \perp Y \iff p(x, y) = p_X(x)\, p_Y(y) \quad \text{for all } x, y.
+\begin{align}
+X \perp Y &\Rightarrow p_{X \mid Y}(x \mid y) = p_X(x) \\
+&\Rightarrow p_{Y \mid X}(y \mid x) = p_Y(y)
+\end{align}
 $$
 
+Equivalently, unlike equation in the last section, this means that the joint probability is simply the product of the two individual probabilities.
+$$
+X \perp Y \iff p(x, y) = p_X(x)\;p_Y(y)
+$$
 
+Here is what such a joint distribution will look like:
 
+| X \ Y           | Y = 1    | Y = 2    | Y = 3    | $\mathbf {p_X}$ |
+| --------------- | -------- | -------- | -------- | --------------- |
+| **X = 1**       | 0.10     | 0.06     | 0.04     | **0.20**        |
+| **X = 2**       | 0.25     | 0.15     | 0.10     | **0.50**        |
+| **X = 3**       | 0.15     | 0.09     | 0.06     | **0.30**        |
+| $\mathbf {p_Y}$ | **0.50** | **0.30** | **0.20** | **1.00**        |
 
-Equivalently — and this is the version that matches intuition — the conditional equals the marginal: $p_{Y \mid X}(y \mid x) = p_Y(y)$. Conditioning on $X$ does not move the distribution of $Y$ at all.
+Each row and each column are simply scaled versions of their margins.
 
-Two separate coin flips are independent: the first coin says nothing about the second. QPS and sessions are emphatically **not** — $Y \le X$ means large $Y$ rules out small $X$ entirely, so the joint cannot possibly factor (the triangular support alone is proof: a product of marginals would fill a rectangle).
+| X \ Y           | Y = 1                    | Y = 2                    | Y = 3                    | $\mathbf {p_X}$ |
+| --------------- | ------------------------ | ------------------------ | ------------------------ | --------------- |
+| **X = 1**       | $p(1, 1) = p_X(1)p_Y(1)$ | $p(1, 2) = p_X(1)p_Y(2)$ | $p(1, 3) = p_X(1)p_Y(3)$ | $p_X(1)$        |
+| **X = 2**       | $p(2, 1) = p_X(2)p_Y(1)$ | $p(2, 2) = p_X(2)p_Y(2)$ | $p(2, 3) = p_X(2)p_Y(3)$ | $p_X(2)$        |
+| **X = 3**       | $p(3, 1) = p_X(3)p_Y(1)$ | $p(3, 2) = p_X(3)p_Y(2)$ | $p(3, 3) = p_X(3)p_Y(3)$ | $p_X(3)$        |
+| $\mathbf {p_Y}$ | $p_Y(1)$                 | $p_Y(2)$                 | $p_Y(3)$                 |                 |
+
+To get the conditional probability distribution of $Y$ when $X = 2$ I slice out the $X = 2$ row and rescale -
+
+| X\Y             | Y = 1                      | Y = 2                      | Y = 3                      | $\mathbf {p_X}$  |
+| --------------- | -------------------------- | -------------------------- | -------------------------- | ---------------- |
+| **X = 2**       | $\frac{0.25}{0.50} = 0.50$ | $\frac{0.15}{0.50} = 0.30$ | $\frac{0.10}{0.50} = 0.20$ | $\mathbf {0.50}$ |
+| $\mathbf {p_Y}$ | $\mathbf {0.50}$           | $\mathbf {0.30}$           | $\mathbf {0.20}$           |                  |
+
+The conditional probabilities are the same as $p_Y$.
 
 ## Conditional Independence
 
