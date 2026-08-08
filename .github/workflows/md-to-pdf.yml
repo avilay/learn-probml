@@ -20,14 +20,18 @@ jobs:
 
       - name: Install Pandoc and LaTeX
         run: |
+          curl -sLO https://github.com/jgm/pandoc/releases/download/3.10.1/pandoc-3.10.1-1-amd64.deb
+          sudo dpkg -i pandoc-3.10.1-1-amd64.deb
+          rm pandoc-3.10.1-1-amd64.deb
+
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
-            pandoc \
             texlive-xetex \
             texlive-latex-recommended \
             texlive-fonts-recommended \
             texlive-latex-extra \
-            lmodern
+            lmodern \
+            fonts-dejavu-core
 
       - name: Convert Markdown files to PDF
         run: |
@@ -37,7 +41,9 @@ jobs:
             pandoc "$file" \
               -o "pdfs/${name}.pdf" \
               --pdf-engine=xelatex \
-              -V geometry:margin=1in
+              -V geometry:margin=1in \
+              -V mainfont="DejaVu Serif" \
+              -V monofont="DejaVu Sans Mono"
           done
 
       - name: Commit and push generated PDFs
