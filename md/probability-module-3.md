@@ -127,7 +127,7 @@ $$
 
 Here is what such a joint distribution will look like:
 
-| X \ Y           | Y = 1    | Y = 2    | Y = 3    | $\mathbf {p_X}$ |
+| X \\ Y          | Y = 1    | Y = 2    | Y = 3    | $\mathbf {p_X}$ |
 | --------------- | -------- | -------- | -------- | --------------- |
 | **X = 1**       | 0.10     | 0.06     | 0.04     | **0.20**        |
 | **X = 2**       | 0.25     | 0.15     | 0.10     | **0.50**        |
@@ -136,7 +136,7 @@ Here is what such a joint distribution will look like:
 
 Each row and each column are simply scaled versions of their margins.
 
-| X \ Y           | Y = 1                    | Y = 2                    | Y = 3                    | $\mathbf {p_X}$ |
+| X \\ Y          | Y = 1                    | Y = 2                    | Y = 3                    | $\mathbf {p_X}$ |
 | --------------- | ------------------------ | ------------------------ | ------------------------ | --------------- |
 | **X = 1**       | $p(1, 1) = p_X(1)p_Y(1)$ | $p(1, 2) = p_X(1)p_Y(2)$ | $p(1, 3) = p_X(1)p_Y(3)$ | $p_X(1)$        |
 | **X = 2**       | $p(2, 1) = p_X(2)p_Y(1)$ | $p(2, 2) = p_X(2)p_Y(2)$ | $p(2, 3) = p_X(2)p_Y(3)$ | $p_X(2)$        |
@@ -145,7 +145,7 @@ Each row and each column are simply scaled versions of their margins.
 
 To get the conditional probability distribution of $Y$ when $X = 2$ I slice out the $X = 2$ row and rescale -
 
-| X\Y             | Y = 1                      | Y = 2                      | Y = 3                      | $\mathbf {p_X}$  |
+| X\\Y            | Y = 1                      | Y = 2                      | Y = 3                      | $\mathbf {p_X}$  |
 | --------------- | -------------------------- | -------------------------- | -------------------------- | ---------------- |
 | **X = 2**       | $\frac{0.25}{0.50} = 0.50$ | $\frac{0.15}{0.50} = 0.30$ | $\frac{0.10}{0.50} = 0.20$ | $\mathbf {0.50}$ |
 | $\mathbf {p_Y}$ | $\mathbf {0.50}$           | $\mathbf {0.30}$           | $\mathbf {0.20}$           |                  |
