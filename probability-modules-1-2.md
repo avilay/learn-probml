@@ -57,12 +57,14 @@ Probability can now be defined as a function that assigns a real number to each 
 * Sigma-additivity: $P(E_1 \cup E_2 \cup \cdots) = P(E_1) + P(E_2) + \cdots$ where $E_i$ are all mutually exclusive a.k.a **disjoint** events.
 
 For the die-roll example, if we assign the probability as follows:
+
 $$
 P(E) = \frac{1}{2} \\
 P(O) = \frac{1}{2} \\
 P(\Omega) = 1 \\
 P(\emptyset) = 0
 $$
+
 It can be seen that it follows all three rules of the probability measure, and is therefor a valid assignment.
 
 Colloquially speaking, when we say something like $P(HH)$, the probability of a single outcome, what we mean is the probability of a singleton event with only that outcome in it, i.e., $P(\{HH\})$. And we can always construct an event space with this singleton as one of its event, the powerset is one such event space.
