@@ -8,7 +8,7 @@ Lets us look at some real world examples of experiments, sample spaces, and outc
 
 #### QPS (Queries Per Second)
 
-Even though it says QPS in the heading, QPS is already an aggregate derived quantity, what my experiment will really measure is *how many requests hit my webserver in a 1 second window*. At a minimum I'll see $0$ requests in my 1-second window, and at most I'll see $N$, which is some theoretical maximum based on the network bandwidth available to the web server and the minimum packet size it can receive. I can define the sample space as the set of integers from $0$ to $N$, i.e., $\Omega = \\{ 0, 1, \cdots, N \\}$. It meets both the criteria of a sample space, each outcome is mutually exclusive, if I get 23 requests in a single 1-second window, then I cannot get any other number; and they are exhaustive, I will measure at least one of the numbers in my sample space. But I don't have to define my sample space in neat mathematical terms. I can define it to be a table with each request in the 1-second window showing up as a row. I get something like this:
+Even though it says QPS in the heading, QPS is already an aggregate derived quantity, what my experiment will really measure is *how many requests hit my webserver in a 1 second window*. At a minimum I'll see $0$ requests in my 1-second window, and at most I'll see $N$, which is some theoretical maximum based on the network bandwidth available to the web server and the minimum packet size it can receive. I can define the sample space as the set of integers from $0$ to $N$, i.e., $\Omega = \{ 0, 1, \cdots, N \}$. It meets both the criteria of a sample space, each outcome is mutually exclusive, if I get 23 requests in a single 1-second window, then I cannot get any other number; and they are exhaustive, I will measure at least one of the numbers in my sample space. But I don't have to define my sample space in neat mathematical terms. I can define it to be a table with each request in the 1-second window showing up as a row. I get something like this:
 
 | Client IP                              | Bytes Downloaded                                             |
 | -------------------------------------- | ------------------------------------------------------------ |
@@ -43,12 +43,12 @@ Probabilities are defined for events, **not** outcomes. An event is a collection
 
 > In measure theory, these rules make $\mathscr F$ a $\sigma$-algebra on $\Omega$. There are some cases where some subset of  outcomes are not considered events and cannot be part of $\mathscr F$. For discrete spaces, a full powerset of $\Omega$ is a valid event-space, but for continuous spaces, this is not always the case. The set of outcomes called the Vitaly Set is not a valid part of the event space.
 
-For the die-roll experiment, the most straightforward event space that I can construct is the full powerset of $\\{1, 2, 3, 4, 5, 6\\}$ with all 64 elements. It will meet all the three rules. But I can also definte an event space as follows:
+For the die-roll experiment, the most straightforward event space that I can construct is the full powerset of $\{1, 2, 3, 4, 5, 6\}$ with all 64 elements. It will meet all the three rules. But I can also definte an event space as follows:
 
-* $E$ an even number appears face-up, i.e., $E = \\{2, 4, 6\\}$
-* $O$ an odd number appears face-up, i.e., $O = \\{1, 3, 5\\}$
+* $E$ an even number appears face-up, i.e., $E = \{2, 4, 6\}$
+* $O$ an odd number appears face-up, i.e., $O = \{1, 3, 5\}$
 
-I can define $\mathscr F = \\{E, O, \Omega, \emptyset\\}$. $O$ and $E$ are complements of each other, so are $\Omega$ and $\emptyset$. The union of $E$ and $O$ is the full sample space which is also part of this event space. It can be seen that all three conditions are met.
+I can define $\mathscr F = \{E, O, \Omega, \emptyset\}$. $O$ and $E$ are complements of each other, so are $\Omega$ and $\emptyset$. The union of $E$ and $O$ is the full sample space which is also part of this event space. It can be seen that all three conditions are met.
 
 Probability can now be defined as a function that assigns a real number to each event in an event space. The function $P$ is called a **probability measure** if it meets the following three conditions:
 
@@ -59,23 +59,21 @@ Probability can now be defined as a function that assigns a real number to each 
 For the die-roll example, if we assign the probability as follows:
 
 $$
-\displaylines {
 P(E) = \frac{1}{2} \\
 P(O) = \frac{1}{2} \\
 P(\Omega) = 1 \\
 P(\emptyset) = 0
-}
 $$
 
 It can be seen that it follows all three rules of the probability measure, and is therefor a valid assignment.
 
-Colloquially speaking, when we say something like $P(HH)$, the probability of a single outcome, what we mean is the probability of a singleton event with only that outcome in it, i.e., $P(\\{HH\\})$. And we can always construct an event space with this singleton as one of its event, the powerset is one such event space.
+Colloquially speaking, when we say something like $P(HH)$, the probability of a single outcome, what we mean is the probability of a singleton event with only that outcome in it, i.e., $P(\{HH\})$. And we can always construct an event space with this singleton as one of its event, the powerset is one such event space.
 
 ##### Impossible and Zero Probability
 
-For discrete spaces, e.g., in the die-roll experiment we might get $P(7) = 0$, if we had defined the sample space to include $7$. This would mean that it is impossible to get $7$. But for continuous spaces, a zero probability event does not imply impossibility. Lets say we measure the latency as 2.384 seconds. A singleton event, i.e., an event with a specific value $\\{2.384\\}$, is a valid member of the event space but its probability measure is $0$. This does not mean it can never happen, in fact it did just happen! The only impossible event for continuous spaces is the $\emptyset$. We have certain outcome sets like the Vitaly set that are not a valid part of any event space, these are neither impossible nor possible. They don't have a probability measure, so it makes no sense to ask whether they are possible or not.
+For discrete spaces, e.g., in the die-roll experiment we might get $P(7) = 0$, if we had defined the sample space to include $7$. This would mean that it is impossible to get $7$. But for continuous spaces, a zero probability event does not imply impossibility. Lets say we measure the latency as 2.384 seconds. A singleton event, i.e., an event with a specific value $\{2.384\}$, is a valid member of the event space but its probability measure is $0$. This does not mean it can never happen, in fact it did just happen! The only impossible event for continuous spaces is the $\emptyset$. We have certain outcome sets like the Vitaly set that are not a valid part of any event space, these are neither impossible nor possible. They don't have a probability measure, so it makes no sense to ask whether they are possible or not.
 
-A caution on the converse, because it is easy to over-state: for continuous spaces the guarantee only runs one way. A *single outcome* always has probability $0$, but an *interval* is **not** guaranteed to have positive probability. An interval has positive probability only where the density is actually positive; an interval that sits outside the support (say latencies in $[-5, -3]$, or a genuine gap in the distribution) still measures $0$ despite being a whole range of outcomes. Where the density is positive, e.g. $P(\\{\omega: 2.0 \le \omega \le 2.5\\})$ for a latency that plausibly lands there, we do get a positive number we can work with.
+A caution on the converse, because it is easy to over-state: for continuous spaces the guarantee only runs one way. A *single outcome* always has probability $0$, but an *interval* is **not** guaranteed to have positive probability. An interval has positive probability only where the density is actually positive; an interval that sits outside the support (say latencies in $[-5, -3]$, or a genuine gap in the distribution) still measures $0$ despite being a whole range of outcomes. Where the density is positive, e.g. $P(\{\omega: 2.0 \le \omega \le 2.5\})$ for a latency that plausibly lands there, we do get a positive number we can work with.
 
 ## Continuous and Discrete Spaces
 
@@ -151,27 +149,25 @@ Or, another random variable that indicates whether the first coin is heads -
 
 You get the idea. I can define any function that assigns a real value to each and every outcome in the sample space. This function is called a **random variable** $X: \Omega \rightarrow \mathbb R$, i.e., $X(\omega) \in \mathbb R$.  As seen in the examples above, the function does not necessarily assign a **unique** real valued label to each outcome, the value can be duplicated. The value that the random variable function $X$ outputs is called its **realization**, often denoted by $x$, i.e., $X(\omega) = x$.
 
-A text book example is often rolling a single die, then $\Omega = \\{1, 2, 3, 4, 5, 6\\}$, and the random variable $X$ is defined as the number of the face-up side, i.e., $X(\omega) = \omega$, i.e., it is the identity function.
+A text book example is often rolling a single die, then $\Omega = \{1, 2, 3, 4, 5, 6\}$, and the random variable $X$ is defined as the number of the face-up side, i.e., $X(\omega) = \omega$, i.e., it is the identity function.
 
-**Support** of a discrete random variable $X$, written as $R_{X}$ or $supp(X)$, is the set of values with non-zero probability: $\\{x: P(X=x) > 0\\}$. This sounds very much like the **range** of a function, and these concepts are related. Range is a property of the function alone (which values can it output), while support is a property of the distribution (where the probability actually is). The support is never larger than the range, and in most cases they are the same. The support differs in cases where some attainable value carries zero probability, e.g., when rolling a loaded die that will never roll a 6, the range is stil $\\{1, 2, 3, 4, 5, 6\\}$ but the support is $\\{1, 2, 3, 4, 5\\}$. This is a useful distinction because something having a probability of $0$ is a much stronger claim than simply not observing a particular value in the sample. Consider a Naive Bayes classifier set up. The vocuabulary is composed of all possible words in the corpus, but in my training set some words do not appear at all. Assuming that these words have a probability of $0$ is dangerous because I am very likely to see these words show up in my testset and my entire classifier will collapse. This is why I need to smooth out the probabilities in practice.
+**Support** of a discrete random variable $X$, written as $R_{X}$ or $supp(X)$, is the set of values with non-zero probability: $\{x: P(X=x) > 0\}$. This sounds very much like the **range** of a function, and these concepts are related. Range is a property of the function alone (which values can it output), while support is a property of the distribution (where the probability actually is). The support is never larger than the range, and in most cases they are the same. The support differs in cases where some attainable value carries zero probability, e.g., when rolling a loaded die that will never roll a 6, the range is stil $\{1, 2, 3, 4, 5, 6\}$ but the support is $\{1, 2, 3, 4, 5\}$. This is a useful distinction because something having a probability of $0$ is a much stronger claim than simply not observing a particular value in the sample. Consider a Naive Bayes classifier set up. The vocuabulary is composed of all possible words in the corpus, but in my training set some words do not appear at all. Assuming that these words have a probability of $0$ is dangerous because I am very likely to see these words show up in my testset and my entire classifier will collapse. This is why I need to smooth out the probabilities in practice.
 
-For probabilities, the main purpose of the random variable is to group outcomes into events. E.g., if my random variable is the number of heads in the coin toss experiment, $P(X = 1)$ is shortcut for saying $P(\\{\omega: X(\omega) = 1\\})$, which is nothing but $P(\\{HT, TH\\})$​. But beyond this, it labels those groups with real numbers in a way that lets me do arithmetic and ordering on them (the role that gives me expectation, variance, quantiles).
+For probabilities, the main purpose of the random variable is to group outcomes into events. E.g., if my random variable is the number of heads in the coin toss experiment, $P(X = 1)$ is shortcut for saying $P(\{\omega: X(\omega) = 1\})$, which is nothing but $P(\{HT, TH\})$. But beyond this, it labels those groups with real numbers in a way that lets me do arithmetic and ordering on them (the role that gives me expectation, variance, quantiles).
 
 #### QPS
 
 Lets define a random variable $X$ that measures the number of requests in a 1-second window. If my sample space is the set of integers between $0$ and $N$, then $X$ is simply an identity function. Now, lets say I define two other random variables - $Y$ and $Z$, where $Y$ is the number of distinct client IPs, and $Z$ is the number of bytes served by the server. I'll now need the table-based sample space and the random variables can be defined as:
 
 $$
-\displaylines {
 X(\omega) = nrows(\omega) \\
 Y(\omega) = distinct(\omega::ClientIP) \\
 Z(\omega) = sum(\omega::Bytes)
-}
 $$
 
 Now if I want to measure the "burstiness" of the arrival times, I can amend my sample space to contain the arrival timestamp.
 
-Random variables on the same sample space can have joint distributions, e.g., I can model the total number of requests against the number of sessions (a session being all the requests from a single IP). Since distinct IPs can't exceed the number of rows, $Y \le X$ always, and $Y = 0$ exactly when $X = 0$, so the joint distribution lives on $\\{(x,y): 0 \le y \le x\\}$, not on the strict product set.
+Random variables on the same sample space can have joint distributions, e.g., I can model the total number of requests against the number of sessions (a session being all the requests from a single IP). Since distinct IPs can't exceed the number of rows, $Y \le X$ always, and $Y = 0$ exactly when $X = 0$, so the joint distribution lives on $\{(x,y): 0 \le y \le x\}$, not on the strict product set.
 
 #### Latency
 
@@ -191,11 +187,11 @@ If the sample space is richer:
 * $\omega =$ (connection state, server processing time, network delay), $T(\omega) = sum(\omega)$.
 * $\omega =$ full trace of the request (full wireshark capture), $T$ will be a much more complex function.
 
-Now, if I want to denote the probability of the latency being between 2 and 5 seconds, in shortform I can say - $P(2 \le T \le 5)$, but this really means $P(\\{\omega: 2 \le T(\omega) \le 5\\})$.
+Now, if I want to denote the probability of the latency being between 2 and 5 seconds, in shortform I can say - $P(2 \le T \le 5)$, but this really means $P(\{\omega: 2 \le T(\omega) \le 5\})$.
 
 Discrete sample spaces usually have discrete support, and continuous sample spaces have continuous support, but it can also be mixed if there are atoms or the measurement is censored.
 
-For discrete variables the probability $P(X = x)$ is the same as $P(X(\omega) = x)$, which in turn is shortform for $P(\\{\omega: X(\omega) = x\\})$ i.e., the probability of an event where the outcome will measure exactly $x$. This can refer to a single outcome or an event that comprises of multiple outcomes, all having the same value. E.g., if I want to represent the probability of whether the die roll is even or not, the event is the set of outcomes $\\{2, 4, 6\\}$ and I'd write it as $P(X = 2 \;or\; 4 \;or\; 6)$. For continuous variables the probability of a single outcome is always 0, but it does not mean that it is an impossibility. We measure probability of intervals instead, and when we say $P(x_1 < X < x_2)$ what we mean is $P(x_1 < X(\omega) < x_2)$.
+For discrete variables the probability $P(X = x)$ is the same as $P(X(\omega) = x)$, which in turn is shortform for $P(\{\omega: X(\omega) = x\})$ i.e., the probability of an event where the outcome will measure exactly $x$. This can refer to a single outcome or an event that comprises of multiple outcomes, all having the same value. E.g., if I want to represent the probability of whether the die roll is even or not, the event is the set of outcomes $\{2, 4, 6\}$ and I'd write it as $P(X = 2 \;or\; 4 \;or\; 6)$. For continuous variables the probability of a single outcome is always 0, but it does not mean that it is an impossibility. We measure probability of intervals instead, and when we say $P(x_1 < X < x_2)$ what we mean is $P(x_1 < X(\omega) < x_2)$.
 
 ## Randomness
 
@@ -214,20 +210,12 @@ A thermometer reading of a room is all three at once — which room, the actual 
 Once $X: \Omega \to \mathbb R$ is fixed, it carries the probability measure $P$ — which lives on the events of $\Omega$ — over to the real line. The probability that $X$ lands in some set $B \subseteq \mathbb R$ is just the probability of the outcomes that $X$ sends into $B$:
 
 $$
-P_X(B) = P(\\{\omega: X(\omega) \in B\\}) = P(X^{-1}(B))
+P_X(B) = P(\{\omega: X(\omega) \in B\}) = P(X^{-1}(B))
 $$
 
-This new measure $P_X = P \circ X^{-1}$, living on $\mathbb R$, is called the **distribution** (or **law**) of $X$ — the *pushforward* of $P$ through $X$. Every "$P(X = x)$ is shorthand for $P(\\{\omega: X(\omega) = x\\})$" expansion we keep writing is just this definition applied to a single point.
+This new measure $P_X = P \circ X^{-1}$, living on $\mathbb R$, is called the **distribution** (or **law**) of $X$ — the *pushforward* of $P$ through $X$. Every "$P(X = x)$ is shorthand for $P(\{\omega: X(\omega) = x\})$" expansion we keep writing is just this definition applied to a single point.
 
 The payoff of naming it: the PMF, the PDF, and the CDF below are not three unrelated objects. They are three ways of describing the one measure $P_X$ — a table of point masses, a density, and a running total. Which descriptions are available depends on what $P_X$ looks like: point masses for a discrete law, a density for a continuous one, and — for a mixed law like recorded latency — a bit of each. That last case is exactly why the CDF, which always exists, turns out to be the description worth reaching for first.
-
-```mermaid
-flowchart LR
-    Omega["(Omega, F, P)<br/>outcome space + measure"] -->|"X : Omega -> R"| R["distribution on R<br/>P_X = P o X^-1"]
-    R --> PMF["PMF<br/>point masses<br/>(discrete law)"]
-    R --> PDF["PDF<br/>density<br/>(continuous law)"]
-    R --> CDF["CDF<br/>running total<br/>(always exists)"]
-```
 
 ## Probability Mass Function
 
@@ -286,10 +274,8 @@ This is why, for anything with atoms, the CDF is the object to reach for first: 
 ## Expectation and Variance
 
 $$
-\displaylines {
 E[X] = \sum_x x \; p(x) \\
 E[X] = \int x \; f(x)dx
-}
 $$
 
 For the discrete case the summation is over the support of $X$, and for the continuous case, the integration is over the range where the probability exists. For the mixed case it would look something like -

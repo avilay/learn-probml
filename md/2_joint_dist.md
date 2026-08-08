@@ -1,4 +1,4 @@
-# Conditional Probability and Dependence
+# Conditional Probability
 
 ## Conditional Probability
 
