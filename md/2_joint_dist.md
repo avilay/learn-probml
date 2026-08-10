@@ -1,4 +1,4 @@
-# Conditional Probability
+# Joint Distributions
 
 ## Conditional Probability
 
@@ -87,11 +87,11 @@ The joint p.m.f can be represented as $p(x, y) = P(X = x, Y = y)$. The individua
 $$
 p_X(x) = \sum_y p(x, y), \qquad p_Y(y) = \sum_x p(x, y).
 $$
-This is called the **marginal** distribution, and the name is literal: if you write the joint as a table, the row sums and column sums land in the *margins* of that table. Summing out a variable is called **marginalizing** it. (For continuous variables it is the same move with an integral: $f_X(x) = \int f(x,y)\,dy$.)
+This is called the **marginal** distribution, and the name is literal: if you write the joint distribution as a table, the row sums and column sums land in the *margins* of that table. Summing out a variable is called **marginalizing** it. (For continuous variables it is the same move with an integral: $f_X(x) = \int f(x,y)\,dy$.)
 
 And if I fix one variable and ask about the other, I am back to conditional probability — applied to distributions:
 $$
-p_{Y \mid X}(y \mid x) = \frac{p(x, y)}{p_X(x)} \\
+p_{Y \mid X}(y \mid x) = \frac{p(x, y)}{p_X(x)} = \frac{p(x, y)}{\sum_y p(x, y)}\\
 p(x, y) = p_{Y \mid X}(y \mid x)\;p_X(x) = p_{X \mid Y}(x \mid y)\;p_Y(y)
 $$
 If I want to find out the conditional probability distribution of $Y$ when $X = 2$, I just slice that row out and rescale it.
@@ -134,6 +134,8 @@ Here is what such a joint distribution will look like:
 | **X = 3**       | 0.15     | 0.09     | 0.06     | **0.30**        |
 | $\mathbf {p_Y}$ | **0.50** | **0.30** | **0.20** | **1.00**        |
 
+> How did I generate this table? I just fixed the values of $p_X$ and $p_Y$ and multiplied them for each cell. 
+
 Each row and each column are simply scaled versions of their margins.
 
 | X \\ Y          | Y = 1                    | Y = 2                    | Y = 3                    | $\mathbf {p_X}$ |
@@ -143,7 +145,7 @@ Each row and each column are simply scaled versions of their margins.
 | **X = 3**       | $p(3, 1) = p_X(3)p_Y(1)$ | $p(3, 2) = p_X(3)p_Y(2)$ | $p(3, 3) = p_X(3)p_Y(3)$ | $p_X(3)$        |
 | $\mathbf {p_Y}$ | $p_Y(1)$                 | $p_Y(2)$                 | $p_Y(3)$                 |                 |
 
-To get the conditional probability distribution of $Y$ when $X = 2$ I slice out the $X = 2$ row and rescale -
+To get the conditional probability distribution of $Y$ when $X = 2$ I slice out the $X = 2$ row and rescale.
 
 | X\\Y            | Y = 1                      | Y = 2                      | Y = 3                      | $\mathbf {p_X}$  |
 | --------------- | -------------------------- | -------------------------- | -------------------------- | ---------------- |
@@ -153,6 +155,20 @@ To get the conditional probability distribution of $Y$ when $X = 2$ I slice out 
 The conditional probabilities are the same as $p_Y$.
 
 ## Conditional Independence
+
+Lets say we have two microservices ServiceX and ServiceY, both using DatabaseZ. All three are running on fairly indpendent infrastructure. Lets say we capture trace logs of all three services and store these in groups of 1-second intervals. Our experiment is to randomly sample one such window - $\omega$. We have three random variables that measure the performance of each of these services. Performance can be defined as some function of latency, QPS, error rates, etc. $X(\omega) = x$ is the performance of ServiceX, $Y(\omega) = y$ is the performance of ServiceB, and $Z(\omega) = z$ is the performance of DatabaseZ. If I know that DatabaseZ is operating fine, then any performance degradation that I might see in ServiceX and ServiceY are independent of each other, i.e., if I further know that ServiceY is having an outage, it is not going to tell me anything about the performance of ServiceX. On the other hand, if know that there is an outage in DatabaseZ, then there is a very high chance that I'll see both ServiceX and ServiceY also degrade. Here the variables $X$ and $Y$ are **conditionally independent given $Z$**. 
+$$
+X \perp Y \mid Z \iff p(x, y \mid z) = p(x \mid z)\;p(y \mid z) \quad \forall \; x, y, z
+$$
+
+
+
+
+Lets have three random variables that measure the performance of all three. Performance can be some function of QPS, latencies, error rates, etc.
+$$
+A()
+$$
+
 
 Here is the subtle one, and it is worth slowing down on because it is the seed of every graphical model later. $X$ and $Y$ are **conditionally independent given $Z$** when, *once you know $Z$*, they carry no further information about each other:
 $$

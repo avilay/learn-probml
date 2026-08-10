@@ -4,32 +4,49 @@
 
 A process that can have a different outcome every time it is repeated can be thought of as an experiment (for the purposes of this discussion). Lets say I flip two coins - the outcome will be one of $HH, HT, TH, TT$.   Or lets say I roll a single die - the outcome will be one of $1, 2, 3, 4, 5, 6$. The set of all possible outcomes is called the sample space, denoted by $\Omega$, and each outcome is denoted by $\omega$. $\Omega$ can only be constructed out of **mutually exclusive** outcomes, i.e., only one of the outcomes can happen; and the outcomes have to be **exhaustive**, i.e., at least one of the outcomes must happen. When we learn that a specific outcome $\bar \omega$ has actually happened, it is called the **realized outcome**.
 
-Lets us look at some real world examples of experiments, sample spaces, and outcomes.
+Lets motivate the rest of this tutorial with a real world scenario.
 
-#### QPS (Queries Per Second)
+#### Microservices Telemetry
 
-Even though it says QPS in the heading, QPS is already an aggregate derived quantity, what my experiment will really measure is *how many requests hit my webserver in a 1 second window*. At a minimum I'll see $0$ requests in my 1-second window, and at most I'll see $N$, which is some theoretical maximum based on the network bandwidth available to the web server and the minimum packet size it can receive. I can define the sample space as the set of integers from $0$ to $N$, i.e., $\Omega = \{ 0, 1, \cdots, N \}$. It meets both the criteria of a sample space, each outcome is mutually exclusive, if I get 23 requests in a single 1-second window, then I cannot get any other number; and they are exhaustive, I will measure at least one of the numbers in my sample space. But I don't have to define my sample space in neat mathematical terms. I can define it to be a table with each request in the 1-second window showing up as a row. I get something like this:
+Lets say I am running a news web app. My architecture is pretty simple, a single Frontend service (FE) gets the user request, fans it out to two other services - Ads and Newsfeed (NF) - in parallel using separate connection pools. Both these downstream services are pretty self-contained and running on separate infrastructure, making them relatively independent of each other. The only thing they have in common is the traffic load. The Ads service recommends ads to send to the user, the Newsfeed service assembles their news feed. If the total processing time for the FE is taking too long, it will abort the request with a `504 Gateway Timeout` response. This is what a gunicorn worker timeout setting would do. 
 
-| Client IP                              | Bytes Downloaded                                             |
-| -------------------------------------- | ------------------------------------------------------------ |
-| All possible IP addresses in the world | From $S_1$ the size of the smallest web page hosted by this server to $S_2$, the size of the largest web page  hosted by this server. |
+Lets say I want to measure Queries Per Second (QPS). The minimum number of queries I'll see in a 1-second window will be $0$, and the maximum will be some theoretical maximum depending on the network bandwidth, lets say $N$. I can define my sample space like this $\Omega = \{0, 1, \dots, N\}$. 
 
-Each element $\omega$ is the actual table, and the number of rows will be integers between $0$ and $N$. Again, it is trivial to see that this sample space meets both the criteria of mutually exclusive and exhaustive.
 
-#### Latency
 
-Experiment is to measure *how long it takes between issuing one HTTP request to my webserver and getting the complete response back*. This latency will have a lower bound $l$, based on how far away the client is from the server. The lower bound will have two floors - because warm HTTP requests don't need the added round trip time for establishing a TCP handshake. $l$ is the cold start lower bound. Lets say my webserver has a timeout of 30 seconds, so the maximum value I'll record is 30 seconds, even though strictly speaking the request might've completed had the timeout been longer, so the true latency was $> 30s$. Regardless of what notes I attach to the reading, the *recorded* value will be the timeout $c$. Because many different requests all get recorded as exactly $c$, that single value accumulates a real chunk of probability - because of that it is called an **atom**. This atom is an artifact of the measurement clipping. There is nothing special about $c$ as far as the true latency is concerned. Now as before I can define my sample space in a number of different ways:
 
-* $\Omega = (-\infty, \infty)$
-* $\Omega = [l, \infty]$
-* $\Omega = [l, c]$
 
-Or, as in the QPS example I can create a richer definition like:
+An outcome $\omega$ will be a single number from this set. I can use this sample space to measure QPS or unique sessions per second, **but not both**, the reasons for which will become clear as we discuss random variables in a later section. This sample space is not very extendible, e.g., what if I want to measure the total number of bytes downloaded in the same 1-second window and do some joint analysis of these measures? 
 
-* $\omega =$ (connection state, server processing time, network delay).
-* $\omega =$ (full wireshark capture).
+To do all sorts of different analysis, I have set up telemetry to capture the full trace of each and every request that hits the FE. The trace will capture the following information:
 
-As we can see from the above examples, sample spaces do not have to be numeric, they can have elements that are numeric (e.g., QPS), or they can fully categorical (e.g., coin flips). The numeric part can be discrete (e.g., QPS) or it can be continuous (e.g., latency). Discrete spaces are more intuitive to reason about. Continuous spaces on the other hand require knowledge of measure theory and can often get unintuitive.
+* Timestamp
+* User Agent
+* Content-Length
+* HTTP status
+* User ID
+* Request ID
+* Session ID
+* FE-Start-Timestamp
+* FE-End-Timestamp
+* Ads-Start-Timestamp
+* Ads-End-Timestamp
+* NF-Start-Timestamp
+* NF-End-Timestamp
+* Next-Action
+* ...
+
+Now, I can create different sample spaces from this telemetry depending on my needs. 
+
+* Group the logs into 1-second intervals based on their timestamp. This will enable me to measure things like QPS, unique sessions per second, total bytes downloaded per second, all with a single sample space. 
+* Group the logs by their Session ID which will enable me to measure business metrics like the Click-Through-Rate (CTR), bounce rate, dwell time, etc. 
+* I can even keep the sample space as a collection of individual traces without any partitioning. From this I can measure things like the latency; whether the request originated from a mobile, a tablet, or a PC; etc.
+
+I can think of the sample space as a bunch of tables, with each row in a table being a single log, $\Omega = \{(l_{11}, l_{12}, \dots), (l_{21}, l_{22}, \dots), \dots\}$. It will be a mistake to think of the sample space as consisting of the logs that I have captured so far. Most trivially, logs that I capture tomorrow will have different timestamps, so they will necessarily not drawn from this faulty sample space. Moreover, the actual sample space is very very large, the timestamp fields can have any value from $(0, \infty)$,  the UUID4 fields can take any one of the $2^{122}$ values, etc. Each row in each table is drawn from the cross-product of the field ranges, and a table is a sequence of up to $N$ such rows, so the size of $\Omega$ is that product raised to $N$. Yes, large!
+
+Randomly sampling a value from this space is akin to selecting a collection of logs $\omega = (l_{i1}, l_{i2}, \dots)$, not a single number like we have seen so far.  Having a single sample space that can enable different measures is useful when we want to do joint analysis of different measures.
+
+In this real-life setting, the sample space is not a neat mathematical set, like the one we saw in the die-roll setting. Here it is a complex object that will have to be further processed in order to extract relevant information out of it. And the space of individual elements can be discrete - like the number of requests in a 1-second window, continuous like latency, or categorical like the user agent.
 
 ## Probability
 
@@ -43,12 +60,14 @@ Probabilities are defined for events, **not** outcomes. An event is a collection
 
 > In measure theory, these rules make $\mathscr F$ a $\sigma$-algebra on $\Omega$. There are some cases where some subset of  outcomes are not considered events and cannot be part of $\mathscr F$. For discrete spaces, a full powerset of $\Omega$ is a valid event-space, but for continuous spaces, this is not always the case. The set of outcomes called the Vitaly Set is not a valid part of the event space.
 
-For the die-roll experiment, the most straightforward event space that I can construct is the full powerset of $\{1, 2, 3, 4, 5, 6\}$ with all 64 elements. It will meet all the three rules. But I can also definte an event space as follows:
+For the die-roll experiment, the most straightforward event space that I can construct is the full powerset of $\{1, 2, 3, 4, 5, 6\}$ with all 64 elements. It will meet all the three rules. For completion under countable unions, I can union any arbitrary number of events, and it will still be in the event space.
+
+But I can also definte an event space as follows:
 
 * $E$ an even number appears face-up, i.e., $E = \{2, 4, 6\}$
 * $O$ an odd number appears face-up, i.e., $O = \{1, 3, 5\}$
 
-I can define $\mathscr F = \{E, O, \Omega, \emptyset\}$. $O$ and $E$ are complements of each other, so are $\Omega$ and $\emptyset$. The union of $E$ and $O$ is the full sample space which is also part of this event space. It can be seen that all three conditions are met.
+I can define $\mathscr F = \{E, O, \Omega, \emptyset\}$. It obviously contains $\Omega$; each event's complement is in $\mathscr F$, $E$ and $O$ are complements of each other, $\Omega$ and $\emptyset$ are complements of each other. I can pick any number of events from these four, and their union will be $\Omega$, which is also in $\mathscr F$. All three rules are met.
 
 Probability can now be defined as a function that assigns a real number to each event in an event space. The function $P$ is called a **probability measure** if it meets the following three conditions:
 
@@ -71,9 +90,7 @@ Colloquially speaking, when we say something like $P(HH)$, the probability of a 
 
 ##### Impossible and Zero Probability
 
-For discrete spaces, e.g., in the die-roll experiment we might get $P(7) = 0$, if we had defined the sample space to include $7$. This would mean that it is impossible to get $7$. But for continuous spaces, a zero probability event does not imply impossibility. Lets say we measure the latency as 2.384 seconds. A singleton event, i.e., an event with a specific value $\{2.384\}$, is a valid member of the event space but its probability measure is $0$. This does not mean it can never happen, in fact it did just happen! The only impossible event for continuous spaces is the $\emptyset$. We have certain outcome sets like the Vitaly set that are not a valid part of any event space, these are neither impossible nor possible. They don't have a probability measure, so it makes no sense to ask whether they are possible or not.
-
-A caution on the converse, because it is easy to over-state: for continuous spaces the guarantee only runs one way. A *single outcome* always has probability $0$, but an *interval* is **not** guaranteed to have positive probability. An interval has positive probability only where the density is actually positive; an interval that sits outside the support (say latencies in $[-5, -3]$, or a genuine gap in the distribution) still measures $0$ despite being a whole range of outcomes. Where the density is positive, e.g. $P(\{\omega: 2.0 \le \omega \le 2.5\})$ for a latency that plausibly lands there, we do get a positive number we can work with.
+For discrete spaces, e.g., in the die-roll experiment we might get $P(7) = 0$, if we had defined the sample space to include $7$. This would mean that it is impossible to get $7$. But for continuous spaces, a zero probability event does not imply impossibility. Lets say we measure the latency as 2.384 seconds. A singleton event, i.e., an event with a specific value $\{2.384\}$, is a valid member of the event space but its probability measure is $0$. This does not mean it can never happen, in fact it did just happen! The only impossible event for continuous spaces is the $\emptyset$. This is why, for continuous spaces, we like to deal in probabilities of ranges, because they can have positive probability. Of course, not all intervals will have positive non-zero probability. E.g., latency will have zero probabality for negative ranges like $(-5, -3)$. Another weirdness for continuous spaces is that there are certain outcome sets like the Vitaly set that are not a valid part of any event space, these are neither impossible nor possible. They don't have a probability measure, so it makes no sense to ask whether they are possible or not. 
 
 ## Continuous and Discrete Spaces
 
@@ -105,20 +122,25 @@ Sometimes, even if the chunkiness is not very small, we can still pretend that t
 
 #### Distribution
 
-The question we want to ask here is whether the probability spreads out, or does it pile up on single points? A continuous distribution smears probability over intervals with no single value carrying a positive bump. A latent quantity which is inherently discrete - like the QPS - will have a bumpy, non-continuous distribution. A latent quantity like height which has negligible chunky measured values, but no single value's probability dominates, i.e., its distribution is continuous, can be approximated as a continuous variable. Things like latency, which have atoms in the measurements, do not have continuous distribution throughout.
+The first two questions were about the world and about the instrument. This one is about the probability measure itself. And since probability is assigned to events and never to outcomes, the real question is - **which events carry probability?** Concretely: can a singleton event carry any at all, or do I need an event with some width to it?
 
-> A note on the word *distribution* here. In this section it is being used loosely — the intuitive picture of how probability is spread over the values of a measured quantity. That "measured quantity" is already a function of the outcome, $\Omega \to \mathbb R$; we simply haven't named it yet. Once we define the random variable below, "distribution" gets a precise meaning as the **pushforward** of $P$ onto the real line, and the continuous / discrete / mixed classification in the table below becomes a statement about that pushforward.
-
-Lets take some examples to see whether they can be deemed as continuous, discrete, or mixed.
-
-| Experiment | Quantity   | Measurement        | Distribution     | Variable   |
-| ---------- | ---------- | ------------------ | ---------------- | ---------- |
-| QPS        | Discrete   | Discrete           | Discrete         | Discrete   |
-| Latency    | Continuous | Discrete (h small) | Mixed (timeouts) | Mixed      |
-| Rainfall   | Continuous | Discrete (h small) | Mixed (dry days) | Mixed      |
-| Height     | Continuous | Discrete (h small) | Continuous       | Continuous |
+* **Discrete**: singleton events carry positive probability. The event "exactly 23 requests arrived in this window" has a real chunk of probability sitting on it. QPS is inherently discrete, so probability piles up on the integers with nothing in between.
+* **Continuous**: every singleton event has probability $0$, and only events with positive width carry any mass. This is the situation from *Impossible and Zero Probability* above - measuring a latency of exactly 2.384 seconds is entirely possible, but that singleton event still measures $0$. Height is like this; the measurement chunkiness is negligible and no single value's probability dominates.
+* **Mixed**: mostly the continuous story, but a handful of singleton events do carry positive mass. Recorded latency is this - the event "the request timed out" is the singleton $\{c\}$, and it carries genuinely positive probability because every timed-out request records exactly $c$.
 
 ## Random Variable
+
+Lets say that the User IDs in our telemetry is an autoincrement style integer, i.e., each new user is a given an integer ID that is 1 more than the last user. We want to store our telemetry partitioned by User ID 
+
+$$R(\omega) = \left\lfloor \frac{\omega - 1}{7} \right\rfloor \qquad S(\omega) = (\omega - 1) \bmod 7$$
+
+And that interpretation has mathematical teeth. Your two die event spaces aren't just differently-sized — they permit different random variables:
+
+- $\mathscr F_1 =$ powerset: $X(\omega) = \omega$ is a random variable, since $X^{-1}({3}) = {3} \in \mathscr F_1$.
+- $\mathscr F_2 = {\emptyset, E, O, \Omega}$: $X(\omega) = \omega$ is not a random variable, since ${3} \notin \mathscr F_2$. The only functions that survive are ones constant on $E$ and constant on $O$ — i.e. functions that can see parity and nothing finer.
+- 
+
+
 
 Consider the two-coin-flip experiment, I can define a random variable that counts the number of heads in the outcome -
 
@@ -153,45 +175,17 @@ A text book example is often rolling a single die, then $\Omega = \{1, 2, 3, 4, 
 
 **Support** of a discrete random variable $X$, written as $R_{X}$ or $supp(X)$, is the set of values with non-zero probability: $\{x: P(X=x) > 0\}$. This sounds very much like the **range** of a function, and these concepts are related. Range is a property of the function alone (which values can it output), while support is a property of the distribution (where the probability actually is). The support is never larger than the range, and in most cases they are the same. The support differs in cases where some attainable value carries zero probability, e.g., when rolling a loaded die that will never roll a 6, the range is stil $\{1, 2, 3, 4, 5, 6\}$ but the support is $\{1, 2, 3, 4, 5\}$. This is a useful distinction because something having a probability of $0$ is a much stronger claim than simply not observing a particular value in the sample. Consider a Naive Bayes classifier set up. The vocuabulary is composed of all possible words in the corpus, but in my training set some words do not appear at all. Assuming that these words have a probability of $0$ is dangerous because I am very likely to see these words show up in my testset and my entire classifier will collapse. This is why I need to smooth out the probabilities in practice.
 
-For probabilities, the main purpose of the random variable is to group outcomes into events. E.g., if my random variable is the number of heads in the coin toss experiment, $P(X = 1)$ is shortcut for saying $P(\{\omega: X(\omega) = 1\})$, which is nothing but $P(\{HT, TH\})$. But beyond this, it labels those groups with real numbers in a way that lets me do arithmetic and ordering on them (the role that gives me expectation, variance, quantiles).
+For probabilities, the main purpose of the random variable is to group outcomes into events. E.g., if my random variable is the number of heads in the coin toss experiment, $P(X = 1)$ is shortcut for saying $P(\{\omega: X(\omega) = 1\})$, which is nothing but $P(\{HT, TH\})$. For discrete variables the probability $P(X = x)$ is the same as $P(X(\omega) = x)$, which in turn is shortform for $P(\{\omega: X(\omega) = x\})$ i.e., the probability of an event where the outcome will measure exactly $x$. This can refer to a single outcome or an event that comprises of multiple outcomes, all having the same value. E.g., if I want to represent the probability of whether the die roll is even or not, the event is the set of outcomes $\{2, 4, 6\}$ and I'd write it as $P(X = 2 \;or\; 4 \;or\; 6)$. For continuous variables we measure probability of intervals instead, and when we say $P(x_1 < X < x_2)$ what we mean is $P(\{\omega: x_1 < X(\omega) < x_2\})$.
 
-#### QPS
+But beyond this, it labels those groups with real numbers in a way that lets me do arithmetic and ordering on them (the role that gives me expectation, variance, quantiles).
 
-Lets define a random variable $X$ that measures the number of requests in a 1-second window. If my sample space is the set of integers between $0$ and $N$, then $X$ is simply an identity function. Now, lets say I define two other random variables - $Y$ and $Z$, where $Y$ is the number of distinct client IPs, and $Z$ is the number of bytes served by the server. I'll now need the table-based sample space and the random variables can be defined as:
+Real life examples of random variables:
 
-$$
-X(\omega) = nrows(\omega) \\
-Y(\omega) = distinct(\omega::ClientIP) \\
-Z(\omega) = sum(\omega::Bytes)
-$$
+* **QPS**: Queries Per Second is itself an aggregate quantity so it cannot be a random variable. A suitable random variable will the number of requests in a 1-second interval, for which my sample space will have to be 1-second groups of trace logs. The random variable will be defined as $X(\omega) = count(\omega)$. The minimum value outputted by $X$ will be $0$ and the maximum value can be some theoretical maximum depending on the network bandwidth, say $N$. $R_X = \{0, 1, \dots, N\}$. 
+* **CTR**: Again, the Click-Through-Rate is an aggregate quantity, a suitable random variable can be whether or not a session saw a click-through, for which the sample space will need to be partitioned by Session IDs. The random variable will take on the value $1$ if the session has at least one ad-click, or $0$ otherwise. Such binary variables are called indicator variables and are often denoted as $\mathbb 1_{\Omega}(\omega)$, and its support is $\{0, 1\}$.
+* **Latency**: This can be read out directly from each request log as the difference between the start and end timestamps. $T(\omega) = end - begin$. Timestamps are nanosecond level floats, so $T$ will be continuous. The minimum value will be some theoretical value based on the minimum processing time for the smallest request - say $l$. The maximum value is interesting. Because of the timeout, the measured maximum will be $c$, the timeout value, but this does not mean that the actual latency was $c$, it is possible that the request would have eventually completed, so the real latency is $\ge c$. While all other latency values are continuous and will be spread out, the single value $c$ will appear a lot. This is why it is called an **atom**, and the act of clipping it at the atom value is called **censoring** or more precisely right-censoring in this case. $T$ is therefore neither continuous nor discrete. - it has two components; a continuous part over $[l, c)$ and a discrete part consisting of a single value $c$. 
 
-Now if I want to measure the "burstiness" of the arrival times, I can amend my sample space to contain the arrival timestamp.
-
-Random variables on the same sample space can have joint distributions, e.g., I can model the total number of requests against the number of sessions (a session being all the requests from a single IP). Since distinct IPs can't exceed the number of rows, $Y \le X$ always, and $Y = 0$ exactly when $X = 0$, so the joint distribution lives on $\{(x,y): 0 \le y \le x\}$, not on the strict product set.
-
-#### Latency
-
-If the sample space is a range of real numbers $\Omega = [l, c]$ or $\Omega = [l, \infty]$, etc. then the random variable $T$ can be the identity function $T(\omega) = \omega$. However, the support of $T$ will have some interesting characteristics because of the atom at $c$.
-
-Here is the distinction it pays to be careful about. The true latency is a continuous quantity that could, in principle, exceed $c$. My measuring apparatus does not record that true value; it records $\min(T, c)$ — every request still running at the timeout is stamped with exactly $c$. This clipping is called **censoring** (specifically **right-censoring**). The standard analogy is a study of light-bulb lifetimes: I watch them for a year, and some bulbs are still burning at the end. Recording those as "lasted 365 days" is false — they lasted longer — and it drags the estimated mean lifetime downwards. Because *every* timed-out request records the identical value $c$, that single value carries real probability mass, maybe $1\%$, not a vanishing amount.
-
-So the atom at $c$ is a property of the **recorded** variable $\min(T, c)$, produced by censoring — it is *not* a claim that the true latency has a point mass at $c$. (Contrast a genuine, intrinsic atom: a load balancer that deliberately returns a canned response at exactly $c$ for some fraction of requests. That would put real mass at $c$ in the latent quantity itself. Same-looking spike, different mechanism, and the difference matters when you model it.)
-
-The recorded variable therefore has two components — a continuous part over $[l, c)$ and a discrete part consisting of the single value $c$. Lets say that the timeout probability is $p$, i.e., $p = P(\min(T,c) = c)$, then the distribution of the recorded variable will be:
-
-* it is drawn from the continuous interval $[l, c)$ with probability $1 - p$
-* it is equal to $c$ with probability $p$
-
-If the sample space is richer:
-
-* $\omega =$ (connection state, server processing time, network delay), $T(\omega) = sum(\omega)$.
-* $\omega =$ full trace of the request (full wireshark capture), $T$ will be a much more complex function.
-
-Now, if I want to denote the probability of the latency being between 2 and 5 seconds, in shortform I can say - $P(2 \le T \le 5)$, but this really means $P(\{\omega: 2 \le T(\omega) \le 5\})$.
-
-Discrete sample spaces usually have discrete support, and continuous sample spaces have continuous support, but it can also be mixed if there are atoms or the measurement is censored.
-
-For discrete variables the probability $P(X = x)$ is the same as $P(X(\omega) = x)$, which in turn is shortform for $P(\{\omega: X(\omega) = x\})$ i.e., the probability of an event where the outcome will measure exactly $x$. This can refer to a single outcome or an event that comprises of multiple outcomes, all having the same value. E.g., if I want to represent the probability of whether the die roll is even or not, the event is the set of outcomes $\{2, 4, 6\}$ and I'd write it as $P(X = 2 \;or\; 4 \;or\; 6)$. For continuous variables the probability of a single outcome is always 0, but it does not mean that it is an impossibility. We measure probability of intervals instead, and when we say $P(x_1 < X < x_2)$ what we mean is $P(x_1 < X(\omega) < x_2)$.
+> The standard analogy of atoms and censoring is a study of light-bulb lifetimes: I watch them for a year, and some bulbs are still burning at the end. Recording those as "lasted 365 days" is false — they lasted longer — and it drags the estimated mean lifetime downwards.
 
 ## Randomness
 
@@ -207,8 +201,7 @@ A thermometer reading of a room is all three at once — which room, the actual 
 
 ## Distribution of a Random Variable
 
-Once $X: \Omega \to \mathbb R$ is fixed, it carries the probability measure $P$ — which lives on the events of $\Omega$ — over to the real line. The probability that $X$ lands in some set $B \subseteq \mathbb R$ is just the probability of the outcomes that $X$ sends into $B$:
-
+==TODO== Once $X: \Omega \to \mathbb R$ is fixed, it carries the probability measure $P$ — which lives on the events of $\Omega$ — over to the real line. The probability that $X$ lands in some set $B \subseteq \mathbb R$ is just the probability of the outcomes that $X$ sends into $B$:
 $$
 P_X(B) = P(\{\omega: X(\omega) \in B\}) = P(X^{-1}(B))
 $$
@@ -216,6 +209,15 @@ $$
 This new measure $P_X = P \circ X^{-1}$, living on $\mathbb R$, is called the **distribution** (or **law**) of $X$ — the *pushforward* of $P$ through $X$. Every "$P(X = x)$ is shorthand for $P(\{\omega: X(\omega) = x\})$" expansion we keep writing is just this definition applied to a single point.
 
 The payoff of naming it: the PMF, the PDF, and the CDF below are not three unrelated objects. They are three ways of describing the one measure $P_X$ — a table of point masses, a density, and a running total. Which descriptions are available depends on what $P_X$ looks like: point masses for a discrete law, a density for a continuous one, and — for a mixed law like recorded latency — a bit of each. That last case is exactly why the CDF, which always exists, turns out to be the description worth reaching for first.
+
+Lets take some examples to see whether they can be deemed as continuous, discrete, or mixed.
+
+| Experiment | Quantity   | Measurement        | Distribution     | Variable   |
+| ---------- | ---------- | ------------------ | ---------------- | ---------- |
+| QPS        | Discrete   | Discrete           | Discrete         | Discrete   |
+| Latency    | Continuous | Discrete (h small) | Mixed (timeouts) | Mixed      |
+| Rainfall   | Continuous | Discrete (h small) | Mixed (dry days) | Mixed      |
+| Height     | Continuous | Discrete (h small) | Continuous       | Continuous |
 
 ## Probability Mass Function
 
