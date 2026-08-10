@@ -10,15 +10,9 @@ Lets motivate the rest of this tutorial with a real world scenario.
 
 Lets say I am running a news web app. My architecture is pretty simple, a single Frontend service (FE) gets the user request, fans it out to two other services - Ads and Newsfeed (NF) - in parallel using separate connection pools. Both these downstream services are pretty self-contained and running on separate infrastructure, making them relatively independent of each other. The only thing they have in common is the traffic load. The Ads service recommends ads to send to the user, the Newsfeed service assembles their news feed. If the total processing time for the FE is taking too long, it will abort the request with a `504 Gateway Timeout` response. This is what a gunicorn worker timeout setting would do. 
 
-Lets say I want to measure Queries Per Second (QPS). The minimum number of queries I'll see in a 1-second window will be $0$, and the maximum will be some theoretical maximum depending on the network bandwidth, lets say $N$. I can define my sample space like this $\Omega = \{0, 1, \dots, N\}$. 
+Lets say I want to measure Queries Per Second (QPS). The minimum number of queries I'll see in a 1-second window will be $0$, and the maximum will be some theoretical maximum depending on the network bandwidth, lets say $N$. I can define my sample space like this $\Omega = \{0, 1, \dots, N\}$. An outcome $\omega$ will be a single number from this set. I can use this sample space to measure QPS.   I can set up another sample space that looks exactly like $\Omega$, lets call it $\Omega'$, and use it to measure the unique sessions per second. The lower and upper bounds work because if $N$ is the upper bound of requests, it will also be the upper bound of sessions. Mathematically, both the sample spaces are the same construct. However, if I want to do joint analysis on sessions and requests, I cannot use the sample space the way it is defined. This is because there is a semantic meaning attached to the sample space - if it means the number of requests in a second, it cannot simultaneously mean the number of sessions in a second as well. And for reasons that will become clear when we discuss jont distributions, if I want to jointly analyze multiple measurements, they must come from the same sample space. To jointly analyze sessions and requests, we will need to define our sample space such that we can make both the measurements from the same space.
 
-
-
-
-
-An outcome $\omega$ will be a single number from this set. I can use this sample space to measure QPS or unique sessions per second, **but not both**, the reasons for which will become clear as we discuss random variables in a later section. This sample space is not very extendible, e.g., what if I want to measure the total number of bytes downloaded in the same 1-second window and do some joint analysis of these measures? 
-
-To do all sorts of different analysis, I have set up telemetry to capture the full trace of each and every request that hits the FE. The trace will capture the following information:
+To do so lets set up telemetry to capture the full trace of each and every request that hits the FE. The trace will capture the following information:
 
 * Timestamp
 * User Agent
@@ -38,11 +32,11 @@ To do all sorts of different analysis, I have set up telemetry to capture the fu
 
 Now, I can create different sample spaces from this telemetry depending on my needs. 
 
-* Group the logs into 1-second intervals based on their timestamp. This will enable me to measure things like QPS, unique sessions per second, total bytes downloaded per second, all with a single sample space. 
+* Group the logs into 1-second intervals based on their timestamp. This will enable me to measure things like QPS, unique sessions per second, total bytes downloaded per second, all from a single sample space. 
 * Group the logs by their Session ID which will enable me to measure business metrics like the Click-Through-Rate (CTR), bounce rate, dwell time, etc. 
 * I can even keep the sample space as a collection of individual traces without any partitioning. From this I can measure things like the latency; whether the request originated from a mobile, a tablet, or a PC; etc.
 
-I can think of the sample space as a bunch of tables, with each row in a table being a single log, $\Omega = \{(l_{11}, l_{12}, \dots), (l_{21}, l_{22}, \dots), \dots\}$. It will be a mistake to think of the sample space as consisting of the logs that I have captured so far. Most trivially, logs that I capture tomorrow will have different timestamps, so they will necessarily not drawn from this faulty sample space. Moreover, the actual sample space is very very large, the timestamp fields can have any value from $(0, \infty)$,  the UUID4 fields can take any one of the $2^{122}$ values, etc. Each row in each table is drawn from the cross-product of the field ranges, and a table is a sequence of up to $N$ such rows, so the size of $\Omega$ is that product raised to $N$. Yes, large!
+I can think of the sample space as a bunch of tables, with each row in a table being a single log, $\Omega = \{(l_{11}, l_{12}, \dots), (l_{21}, l_{22}, \dots), \dots\}$. It will be a mistake to think of the sample space as consisting of the logs that I have captured so far. Most trivially, logs that I capture tomorrow will have different timestamps, so they will necessarily not be drawn from this faulty sample space. Moreover, the actual sample space is very very large, the timestamp fields can have any value from $(0, \infty)$,  the UUID4 fields can take any one of the $2^{122}$ values, etc. Each row in each table is drawn from the cross-product of the field ranges, and a table is a sequence of up to $N$ such rows, so the size of $\Omega$ is that product raised to $N$. Yes, large!
 
 Randomly sampling a value from this space is akin to selecting a collection of logs $\omega = (l_{i1}, l_{i2}, \dots)$, not a single number like we have seen so far.  Having a single sample space that can enable different measures is useful when we want to do joint analysis of different measures.
 
@@ -50,7 +44,7 @@ In this real-life setting, the sample space is not a neat mathematical set, like
 
 ## Probability
 
-Probability is not some actual property that exists, e.g., a coin does not have some probability attribute that I can read out in one-shot. It is a model, and like all scientific models, its purpose is to help us predict the future, or predict how some system will behave given some initial conditions. We can define probability as long-runnig frequencies, because we have found that it is useful in predicting the next outcome, or we can define it as the degree of our belief, for similar reasons. Unlike physical models whose inputs are direct physical measurements, probability's inputs are themselves abstract, they are frequencies that only exist across many repetitions, or in the case of Bayesian reading - degrees of belief - which are even more removed than frequencies. An interesting definition of probability I came across was by the Italian mathematician de Finetti - probability is the price you'd pay for a gamble where you receive $1$ if the event occurs, or conversely the price you'd charge for a gamble where you pay out $1$ if the event happens.
+Probability is not some actual property that exists, e.g., a coin does not have some probability attribute that I can read out in one-shot. It is a model, and like all scientific models, its purpose is to help us predict the future, or predict how some system will behave given some initial conditions. We can define probability as long-running frequencies, because we have found that it is useful in predicting the next outcome, or we can define it as the degree of our belief, for similar reasons. Unlike physical models whose inputs are direct physical measurements, probability's inputs are themselves abstract, they are frequencies that only exist across many repetitions, or in the case of Bayesian reading - degrees of belief - which are even more removed than frequencies. An interesting definition of probability I came across was by the Italian mathematician de Finetti - probability is the price you'd pay for a gamble where you receive $1$ if the event occurs, or conversely the price you'd charge for a gamble where you pay out $1$ if the event happens.
 
 Probabilities are defined for events, **not** outcomes. An event is a collection of outcomes, i.e., it is a subset of the sample space, $E \subseteq \Omega$. Probability of an event tells us how likely it is for one of the outcomes contained within it to happen. Remember, outcomes are mutually exclusive, so only one of the outcomes contained within it can happen. But this definition of probability uses the word "likely" which is just another synonym for probability. To get a more rigorous definition, lets first understand the concept of the event space $\mathscr F$, which is a set of events, i.e., it is a set of subsets of $\Omega$ which follows the following three rules:
 
@@ -62,7 +56,7 @@ Probabilities are defined for events, **not** outcomes. An event is a collection
 
 For the die-roll experiment, the most straightforward event space that I can construct is the full powerset of $\{1, 2, 3, 4, 5, 6\}$ with all 64 elements. It will meet all the three rules. For completion under countable unions, I can union any arbitrary number of events, and it will still be in the event space.
 
-But I can also definte an event space as follows:
+But I can also define an event space as follows:
 
 * $E$ an even number appears face-up, i.e., $E = \{2, 4, 6\}$
 * $O$ an odd number appears face-up, i.e., $O = \{1, 3, 5\}$
@@ -87,6 +81,8 @@ $$
 It can be seen that it follows all three rules of the probability measure, and is therefor a valid assignment.
 
 Colloquially speaking, when we say something like $P(HH)$, the probability of a single outcome, what we mean is the probability of a singleton event with only that outcome in it, i.e., $P(\{HH\})$. And we can always construct an event space with this singleton as one of its event, the powerset is one such event space.
+
+The probability space is defined as the triple $\Omega, \mathscr F, P$, where $\Omega$ and $\mathscr F$ are sets and $P$ is a function. 
 
 ##### Impossible and Zero Probability
 
@@ -130,15 +126,7 @@ The first two questions were about the world and about the instrument. This one 
 
 ## Random Variable
 
-Lets say that the User IDs in our telemetry is an autoincrement style integer, i.e., each new user is a given an integer ID that is 1 more than the last user. We want to store our telemetry partitioned by User ID 
-
-$$R(\omega) = \left\lfloor \frac{\omega - 1}{7} \right\rfloor \qquad S(\omega) = (\omega - 1) \bmod 7$$
-
-And that interpretation has mathematical teeth. Your two die event spaces aren't just differently-sized — they permit different random variables:
-
-- $\mathscr F_1 =$ powerset: $X(\omega) = \omega$ is a random variable, since $X^{-1}({3}) = {3} \in \mathscr F_1$.
-- $\mathscr F_2 = {\emptyset, E, O, \Omega}$: $X(\omega) = \omega$ is not a random variable, since ${3} \notin \mathscr F_2$. The only functions that survive are ones constant on $E$ and constant on $O$ — i.e. functions that can see parity and nothing finer.
-- 
+==TODO==
 
 
 

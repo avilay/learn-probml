@@ -41,31 +41,22 @@ EM as a lower bound, the ELBO, conjugacy). Most modules use all three.
 
 ## Part I — Foundations
 
-### Module 1 — Random variables as functions
+### Module 1 — Probability and Random variables
 **Objective.** Undo the coin/dice damage: a random variable is a function
 `X : Ω → ℝ` that you *chose*, and the sample space is a modeling decision, not a
-physical given.
-**Concepts.** Outcome vs. sample space vs. support; `X` as a many-to-one function; the
-information `X` discards; why symmetry-given distributions (dice) are the exception, not
-the rule.
-**Running thread.** QPS: one outcome ω is a full microsecond-level trace; `X` collapses
-it to a count. Latency: same experiment, different `X`, hence a different sample space —
-motivating "enlarge Ω when you add a variable."
-**Medium.** Animation (the many-to-one collapse — already prototyped). Hand-drawn Ω,
-built up live.
-
-### Module 2 — Distributions and the mixed case
-**Objective.** PMF, PDF, and CDF as three views, unified by the CDF — and use the
+physical given. PMF, PDF, and CDF as three views, unified by the CDF — and use the
 latency atom to force that unification early, before it becomes a special case students
 fear.
-**Concepts.** PMF, PDF, CDF; the CDF as the object that always exists; the mixed
+**Concepts.** Outcome vs. sample space vs. support; `X` as a many-to-one function; the
+information `X` discards; why symmetry-given distributions (dice) are the exception, not
+the rule. PMF, PDF, CDF; the CDF as the object that always exists; the mixed
 distribution (continuous part + atoms); expectation as an integral *against a measure*
 (measure-theoretic view introduced here, lightly, precisely because the atom makes the
 elementary view creak). Define plainly: "density," "mass," "expectation."
-**Running thread.** Latency is the star: a smooth density below the timeout with a
+**Running thread.** QPS: one outcome ω is a full microsecond-level trace; `X` collapses
+it to a count. Latency: same experiment, different `X`, hence a different sample space —
+motivating "enlarge Ω when you add a variable." Latency is the star: a smooth density below the timeout with a
 literal spike (atom) sitting on top at the cutoff. QPS gives the pure-PMF contrast.
-**Medium.** Animation (density with the atom spike growing as timeout probability rises).
-Live code (empirical CDF of simulated latencies overlaying the model).
 
 ### Module 3 — Several random variables at once
 **Objective.** Joint, marginal, conditional; independence and *conditional*
@@ -77,8 +68,7 @@ predictor).
 **Running thread.** Joint of (QPS, mean latency): they're dependent — high load raises
 latency — so the joint doesn't factor, which is exactly what makes conditioning
 interesting.
-**Medium.** Animation (marginalization as projecting a joint cloud onto an axis).
-Hand-derivation (conditional expectation as projection).
+**Medium.** Hand-derivation (conditional expectation as projection).
 
 ---
 
